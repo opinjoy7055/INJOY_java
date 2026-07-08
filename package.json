@@ -1,0 +1,12 @@
+{
+  "name": "op-injoy-core",
+  "version": "5.0.0",
+  "description": "OP INJOY High-concurrency testing engine",
+  "main": "index.js",
+  "type": "commonjs",
+  "dependencies": {
+    "mineflayer": "^4.24.0",
+    "bedrock-protocol": "^3.27.0",
+    "minecraft-data": "^3.77.0"
+  }
+}
