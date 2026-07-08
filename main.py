@@ -1,6 +1,7 @@
 import os
 import sys
 import time
+import socket
 import threading
 import psutil
 import subprocess
@@ -23,11 +24,20 @@ bot_servers = {
 def auto_restart_sequence():
     time.sleep(7200)
     print("\n[!] 2 Hours reached. OP INJOY System Auto-Restarting...")
-    # Clean up any running node processes before restart
     os.system("pkill -f node")
     os.execv(sys.executable, ['python3'] + sys.argv)
 
 threading.Thread(target=auto_restart_sequence, daemon=True).start()
+
+def get_local_ip():
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except:
+        return "127.0.0.1"
 
 # =====================================================================
 # FRONTEND UI (Matrix Rain + Minecraft V4 Configuration)
@@ -80,18 +90,16 @@ HTML_UI = """
         </div>
 
         <div id="servers">
-            <!-- Injected via JS -->
-        </div>
+            </div>
     </div>
 </div>
 
 <script>
-    // --- MATRIX RAIN EFFECT ---
     const canvas = document.getElementById('matrix');
     const ctx = canvas.getContext('2d');
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789$+-*/=%""\'#&_(),.;:?!\\|{}<>[]^~';
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789$+-*/=%""\\'#&_(),.;:?!\\\\|{}<>[]^~';
     const fontSize = 14;
     const columns = canvas.width / fontSize;
     const drops = Array.from({length: columns}).fill(1);
@@ -111,7 +119,6 @@ HTML_UI = """
     setInterval(drawMatrix, 33);
     window.addEventListener('resize', () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; });
 
-    // --- PANEL LOGIC ---
     function renderServers(data) {
         let html = '';
         for (let i = 1; i <= 4; i++) {
@@ -125,9 +132,7 @@ HTML_UI = """
                     <span>OP INJOY SERVER #${i}</span>
                     <span class="${statusClass}">[ ${srv.status} ${icon} ]</span>
                 </div>
-                
                 <input class="full-width" type="text" id="target_${i}" placeholder="IP:Port (e.g. play.example.com:19132)" value="${srv.target}">
-                
                 <div class="input-row">
                     <select id="edition_${i}">
                         <option value="1">Java Only</option>
@@ -136,7 +141,6 @@ HTML_UI = """
                     </select>
                     <input type="number" id="bots_${i}" placeholder="Total Bots" value="10">
                 </div>
-                
                 <div class="input-row">
                     <select id="speed_${i}">
                         <option value="1">Normal Speed</option>
@@ -149,9 +153,7 @@ HTML_UI = """
                         <option value="4">Freeze</option>
                     </select>
                 </div>
-                
                 <input class="full-width" type="text" id="spam_${i}" placeholder="Spam Message (Optional)" value="">
-
                 <div class="btn-group">
                     <button class="btn-start" onclick="sendAction(${i}, 'start')">[ DEPLOY BOTS ]</button>
                     <button class="btn-stop" onclick="sendAction(${i}, 'stop')">[ KILL BOTS ]</button>
@@ -171,10 +173,7 @@ HTML_UI = """
     }
 
     function fetchStats() {
-        fetch('/api/stats')
-            .then(res => res.json())
-            .then(data => renderServers(data))
-            .catch(err => console.log(err));
+        fetch('/api/stats').then(res => res.json()).then(data => renderServers(data)).catch(err => console.log(err));
     }
 
     function sendAction(id, action) {
@@ -189,9 +188,8 @@ HTML_UI = """
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({
-                id: id, action: action, 
-                target: target, bots: bots, edition: edition,
-                speed: speed, afk: afk, spam: spam
+                id: id, action: action, target: target, bots: bots, 
+                edition: edition, speed: speed, afk: afk, spam: spam
             })
         }).then(() => fetchStats());
     }
@@ -229,7 +227,6 @@ def action():
     
     if s_id in bot_servers:
         if act == 'start':
-            # Prevent double execution on the same slot
             if bot_servers[s_id]['status'] == 'RUNNING' and bot_servers[s_id]['pid']:
                 try: os.kill(bot_servers[s_id]['pid'], 9)
                 except: pass
@@ -240,38 +237,22 @@ def action():
             
             print(f"[+] Deploying OP INJOY #{s_id} -> {bot_servers[s_id]['target']} | Bots: {bot_servers[s_id]['bots']}")
             
-            # Extract configuration data to pass to Node.js
-            target_ip = bot_servers[s_id]['target']
-            count = bot_servers[s_id]['bots']
-            edition = data.get('edition', '3')
-            speed = data.get('speed', '1')
-            afk = data.get('afk', '1')
-            spam = data.get('spam', '')
-            
-            # Execute the underlying Node engine headlessly with arguments
             env_vars = os.environ.copy()
-            env_vars['TARGET_IP'] = target_ip
-            env_vars['BOT_COUNT'] = str(count)
-            env_vars['EDITION'] = str(edition)
-            env_vars['SPEED'] = str(speed)
-            env_vars['AFK_MODE'] = str(afk)
-            env_vars['SPAM_MSG'] = str(spam)
+            env_vars['TARGET_IP'] = bot_servers[s_id]['target']
+            env_vars['BOT_COUNT'] = str(bot_servers[s_id]['bots'])
+            env_vars['EDITION'] = str(data.get('edition', '3'))
+            env_vars['SPEED'] = str(data.get('speed', '1'))
+            env_vars['AFK_MODE'] = str(data.get('afk', '1'))
+            env_vars['SPAM_MSG'] = str(data.get('spam', ''))
 
             try:
-                proc = subprocess.Popen(
-                    ['node', 'index.js'], 
-                    env=env_vars, 
-                    stdout=subprocess.DEVNULL, 
-                    stderr=subprocess.DEVNULL
-                )
+                proc = subprocess.Popen(['node', 'index.js'], env=env_vars, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                 bot_servers[s_id]['pid'] = proc.pid
             except Exception as e:
                 print(f"[-] Failed to launch Node.js engine: {e}")
             
         elif act == 'stop':
             bot_servers[s_id]['status'] = 'STOPPED'
-            
-            # Kill the specific subprocess
             pid = bot_servers[s_id].get('pid')
             if pid:
                 print(f"[-] Killing OP INJOY #{s_id} (PID: {pid})")
@@ -286,80 +267,19 @@ def action():
 # =====================================================================
 if __name__ == '__main__':
     os.system('clear' if os.name == 'posix' else 'cls')
+    
+    network_ip = get_local_ip()
+    
     print("\033[96m\033[1m========================================\033[0m")
     print("\033[92m\033[1m  OP INJOY MINECRAFT WEB PANEL \033[0m")
     print("\033[96m\033[1m========================================\033[0m")
-    print("\033[93m[*] Access panel at: http://injoy:9000\033[0m\n")
+    print("\033[93m[*] LOCAL (Non-Root):  http://localhost:9000\033[0m")
+    print("\033[93m[*] ROOT ACCESS:       http://injoy:9000\033[0m")
+    print(f"\033[93m[*] LAN / WiFi ACCESS: http://{network_ip}:9000\033[0m\n")
     
     psutil.cpu_percent()
-    
     import logging
     log = logging.getLogger('werkzeug')
     log.setLevel(logging.ERROR)
     
     app.run(host='0.0.0.0', port=9000, threaded=True)
-t('target', '')
-            bot_servers[s_id]['bots'] = data.get('bots', '10')
-            
-            print(f"[+] Deploying OP INJOY #{s_id} -> {bot_servers[s_id]['target']} | Bots: {bot_servers[s_id]['bots']}")
-            
-            # Extract configuration data to pass to Node.js
-            target_ip = bot_servers[s_id]['target']
-            count = bot_servers[s_id]['bots']
-            edition = data.get('edition', '3')
-            speed = data.get('speed', '1')
-            afk = data.get('afk', '1')
-            spam = data.get('spam', '')
-            
-            # Execute the underlying Node engine headlessly with arguments
-            # Ensure your Node.js code can parse these env variables or CLI arguments
-            env_vars = os.environ.copy()
-            env_vars['TARGET_IP'] = target_ip
-            env_vars['BOT_COUNT'] = str(count)
-            env_vars['EDITION'] = str(edition)
-            env_vars['SPEED'] = str(speed)
-            env_vars['AFK_MODE'] = str(afk)
-            env_vars['SPAM_MSG'] = str(spam)
-
-            # Assuming the Node script is in the same directory, run it headlessly
-            try:
-                proc = subprocess.Popen(
-                    ['node', 'index.js'], 
-                    env=env_vars, 
-                    stdout=subprocess.DEVNULL, 
-                    stderr=subprocess.DEVNULL
-                )
-                bot_servers[s_id]['pid'] = proc.pid
-            except Exception as e:
-                print(f"[-] Failed to launch Node.js engine: {e}")
-            
-        elif act == 'stop':
-            bot_servers[s_id]['status'] = 'STOPPED'
-            
-            # Kill the specific subprocess
-            pid = bot_servers[s_id].get('pid')
-            if pid:
-                print(f"[-] Killing OP INJOY #{s_id} (PID: {pid})")
-                try: os.kill(pid, 9)
-                except: pass
-                bot_servers[s_id]['pid'] = None
-            
-    return jsonify({"success": True})
-
-# =====================================================================
-# START ENGINE
-# =====================================================================
-if __name__ == '__main__':
-    os.system('clear' if os.name == 'posix' else 'cls')
-    print("\033[96m\033[1m========================================\033[0m")
-    print("\033[92m\033[1m  OP INJOY MINECRAFT WEB PANEL \033[0m")
-    print("\033[96m\033[1m========================================\033[0m")
-    print("\033[93m[*] Access panel at: http://localhost:5000\033[0m\n")
-    
-    psutil.cpu_percent()
-    
-    import logging
-    log = logging.getLogger('werkzeug')
-    log.setLevel(logging.ERROR)
-    
-    app.run(host='0.0.0.0', port=5000, threaded=True)
