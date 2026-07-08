@@ -80,7 +80,8 @@ HTML_UI = """
         </div>
 
         <div id="servers">
-            </div>
+            <!-- Injected via JS -->
+        </div>
     </div>
 </div>
 
@@ -235,6 +236,69 @@ def action():
                 
             bot_servers[s_id]['status'] = 'RUNNING'
             bot_servers[s_id]['target'] = data.get('target', '')
+            bot_servers[s_id]['bots'] = data.get('bots', '10')
+            
+            print(f"[+] Deploying OP INJOY #{s_id} -> {bot_servers[s_id]['target']} | Bots: {bot_servers[s_id]['bots']}")
+            
+            # Extract configuration data to pass to Node.js
+            target_ip = bot_servers[s_id]['target']
+            count = bot_servers[s_id]['bots']
+            edition = data.get('edition', '3')
+            speed = data.get('speed', '1')
+            afk = data.get('afk', '1')
+            spam = data.get('spam', '')
+            
+            # Execute the underlying Node engine headlessly with arguments
+            env_vars = os.environ.copy()
+            env_vars['TARGET_IP'] = target_ip
+            env_vars['BOT_COUNT'] = str(count)
+            env_vars['EDITION'] = str(edition)
+            env_vars['SPEED'] = str(speed)
+            env_vars['AFK_MODE'] = str(afk)
+            env_vars['SPAM_MSG'] = str(spam)
+
+            try:
+                proc = subprocess.Popen(
+                    ['node', 'index.js'], 
+                    env=env_vars, 
+                    stdout=subprocess.DEVNULL, 
+                    stderr=subprocess.DEVNULL
+                )
+                bot_servers[s_id]['pid'] = proc.pid
+            except Exception as e:
+                print(f"[-] Failed to launch Node.js engine: {e}")
+            
+        elif act == 'stop':
+            bot_servers[s_id]['status'] = 'STOPPED'
+            
+            # Kill the specific subprocess
+            pid = bot_servers[s_id].get('pid')
+            if pid:
+                print(f"[-] Killing OP INJOY #{s_id} (PID: {pid})")
+                try: os.kill(pid, 9)
+                except: pass
+                bot_servers[s_id]['pid'] = None
+            
+    return jsonify({"success": True})
+
+# =====================================================================
+# START ENGINE
+# =====================================================================
+if __name__ == '__main__':
+    os.system('clear' if os.name == 'posix' else 'cls')
+    print("\033[96m\033[1m========================================\033[0m")
+    print("\033[92m\033[1m  OP INJOY MINECRAFT WEB PANEL \033[0m")
+    print("\033[96m\033[1m========================================\033[0m")
+    print("\033[93m[*] Access panel at: http://injoy:9000\033[0m\n")
+    
+    psutil.cpu_percent()
+    
+    import logging
+    log = logging.getLogger('werkzeug')
+    log.setLevel(logging.ERROR)
+    
+    app.run(host='0.0.0.0', port=9000, threaded=True)
+t('target', '')
             bot_servers[s_id]['bots'] = data.get('bots', '10')
             
             print(f"[+] Deploying OP INJOY #{s_id} -> {bot_servers[s_id]['target']} | Bots: {bot_servers[s_id]['bots']}")
