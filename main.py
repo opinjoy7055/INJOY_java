@@ -90,7 +90,8 @@ HTML_UI = """
         </div>
 
         <div id="servers">
-            </div>
+            <!-- Injected via JS -->
+        </div>
     </div>
 </div>
 
@@ -167,8 +168,8 @@ HTML_UI = """
             container.innerHTML = html;
         }
         
-        document.getElementById('cpu').innerText = `CPU: ${data.cpu}%`;
-        document.getElementById('ram').innerText = `RAM: ${data.ram}%`;
+        document.getElementById('cpu').innerText = `CPU: ${data.cpu}`;
+        document.getElementById('ram').innerText = `RAM: ${data.ram}`;
         document.getElementById('active').innerText = `ACTIVE ENGINES: ${data.active}`;
     }
 
@@ -211,8 +212,17 @@ def index():
 
 @app.route('/api/stats')
 def stats():
-    cpu_usage = psutil.cpu_percent(interval=None)
-    ram_usage = psutil.virtual_memory().percent
+    # Bypass Android restriction on /proc/stat
+    try:
+        cpu_usage = f"{psutil.cpu_percent(interval=None)}%"
+    except Exception:
+        cpu_usage = "N/A (Android Locked)"
+        
+    try:
+        ram_usage = f"{psutil.virtual_memory().percent}%"
+    except Exception:
+        ram_usage = "N/A"
+        
     active_count = sum(1 for s in bot_servers.values() if s['status'] == 'RUNNING')
     
     response = {"cpu": cpu_usage, "ram": ram_usage, "active": active_count}
@@ -277,7 +287,12 @@ if __name__ == '__main__':
     print("\033[93m[*] ROOT ACCESS:       http://injoy:9000\033[0m")
     print(f"\033[93m[*] LAN / WiFi ACCESS: http://{network_ip}:9000\033[0m\n")
     
-    psutil.cpu_percent()
+    # Bypass Android restriction on /proc/stat
+    try:
+        psutil.cpu_percent()
+    except Exception:
+        pass
+        
     import logging
     log = logging.getLogger('werkzeug')
     log.setLevel(logging.ERROR)
