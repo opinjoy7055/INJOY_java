@@ -11,7 +11,6 @@ REPO_URL="https://github.com/opinjoy7055/INJOY_java.git"
 if [ -d "/data/data/com.termux" ]; then
     echo -e "${YELLOW}[*] Installing Termux Dependencies...${NC}"
     pkg update -y && pkg upgrade -y
-    # Added cmake, clang, make for native module compilation
     pkg install python nodejs git cmake clang make -y
     pip install flask psutil
 elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
@@ -21,15 +20,23 @@ elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
     pip3 install flask psutil
 fi
 
-# 2. Clone Repository
-echo -e "${YELLOW}[*] Cloning OP INJOY Repository...${NC}"
-rm -rf "$TARGET_DIR"
-git clone "$REPO_URL" "$TARGET_DIR"
-cd "$TARGET_DIR" || exit
+# 2. Smart Git Update (DO NOT DELETE FOLDER)
+echo -e "${YELLOW}[*] Updating OP INJOY Repository...${NC}"
+if [ -d "$TARGET_DIR/.git" ]; then
+    cd "$TARGET_DIR" || exit
+    git pull origin main
+else
+    git clone "$REPO_URL" "$TARGET_DIR"
+    cd "$TARGET_DIR" || exit
+fi
 
-# 3. Install Node.js Bot Modules
+# 3. Fast NPM Install (Multi-core & Cached)
 echo -e "${YELLOW}[*] Installing Node.js Bot Modules...${NC}"
-npm install mineflayer@latest bedrock-protocol@latest minecraft-data@latest --no-audit --no-fund
+# This tells the C++ compiler to use all available CPU cores to build faster
+export JOBS=max
+export npm_config_jobs=max
+
+npm install mineflayer@latest bedrock-protocol@latest minecraft-data@latest --no-audit --no-fund --prefer-offline --loglevel error
 
 # 4. Create launch command
 BIN_PATH="/data/data/com.termux/files/usr/bin/op-injoy"
