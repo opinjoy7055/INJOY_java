@@ -8,17 +8,14 @@ import subprocess
 from flask import Flask, render_template_string, jsonify, request
 
 # =====================================================================
-# OP INJOY VIP SYSTEM - MINECRAFT ENGINE
+# OP INJOY VIP SYSTEM - MINECRAFT ENGINE (V5 UI REVAMP)
 # =====================================================================
 
 app = Flask(__name__)
 
-# Initial dynamic state management starting with 4 slots
+# Start with ONLY 1 Slot by default
 bot_servers = {
-    "1": {"status": "STOPPED", "target": "", "bots": "10", "edition": "3", "pid": None},
-    "2": {"status": "STOPPED", "target": "", "bots": "10", "edition": "3", "pid": None},
-    "3": {"status": "STOPPED", "target": "", "bots": "10", "edition": "3", "pid": None},
-    "4": {"status": "STOPPED", "target": "", "bots": "10", "edition": "3", "pid": None}
+    "1": {"status": "STOPPED", "target": "", "bots": "10", "edition": "3", "pid": None}
 }
 
 def auto_restart_sequence():
@@ -40,7 +37,7 @@ def get_local_ip():
         return "127.0.0.1"
 
 # =====================================================================
-# FRONTEND UI (Matrix Rain + Dynamic Engine Configuration)
+# FRONTEND UI (Modern Glassmorphism + Smart Circular Buttons)
 # =====================================================================
 HTML_UI = """
 <!DOCTYPE html>
@@ -50,32 +47,76 @@ HTML_UI = """
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OP INJOY VIP SYSTEM</title>
     <style>
-        body { margin: 0; padding: 0; background: #000; color: #0f0; font-family: 'Courier New', Courier, monospace; overflow-x: hidden; }
-        canvas { display: block; position: fixed; top: 0; left: 0; z-index: 1; }
-        #panel-container { position: relative; z-index: 2; width: 100%; max-width: 550px; margin: 40px auto; }
-        .panel { border: 2px solid #0f0; background: rgba(0, 0, 0, 0.85); box-shadow: 0 0 20px rgba(0, 255, 0, 0.4); padding: 20px; }
-        .header { text-align: center; border-bottom: 2px solid #0f0; padding-bottom: 10px; margin-bottom: 20px; }
-        .header h2 { margin: 0; text-shadow: 0 0 10px #0f0; }
-        .stats { display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; margin-bottom: 15px; }
-        .slot-controls { display: flex; gap: 10px; margin-bottom: 20px; }
-        .server-box { border: 1px dashed #0f0; padding: 15px; margin-bottom: 15px; }
-        .server-header { display: flex; justify-content: space-between; margin-bottom: 10px; font-weight: bold; }
-        .running { color: #0f0; text-shadow: 0 0 5px #0f0; }
-        .stopped { color: #f00; text-shadow: 0 0 5px #f00; }
-        .input-row { display: flex; gap: 10px; margin-bottom: 10px; }
-        input, select { flex: 1; background: #111; border: 1px solid #0f0; color: #0f0; padding: 8px; box-sizing: border-box; font-family: monospace; }
-        input:focus, select:focus { outline: none; box-shadow: 0 0 10px #0f0; }
-        .full-width { width: 100%; margin-bottom: 10px; }
-        .btn-group { display: flex; gap: 10px; margin-top: 10px; }
-        button { flex: 1; padding: 8px; font-weight: bold; font-family: monospace; cursor: pointer; border: none; text-transform: uppercase; transition: 0.2s; }
-        .btn-start { background: #0f0; color: #000; }
-        .btn-start:hover { background: #fff; box-shadow: 0 0 10px #0f0; }
-        .btn-stop { background: #f00; color: #fff; }
-        .btn-stop:hover { background: #fff; color: #f00; box-shadow: 0 0 10px #f00; }
-        .btn-action { background: #111; border: 1px solid #0f0; color: #0f0; padding: 10px; text-align: center; font-size: 13px; }
-        .btn-action:hover { background: #0f0; color: #000; box-shadow: 0 0 10px #0f0; }
-        .btn-danger-action { background: #111; border: 1px solid #f00; color: #f00; padding: 10px; text-align: center; font-size: 13px; }
-        .btn-danger-action:hover { background: #f00; color: #fff; box-shadow: 0 0 10px #f00; }
+        body { margin: 0; padding: 0; background: #050505; color: #fff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overflow-x: hidden; }
+        canvas { display: block; position: fixed; top: 0; left: 0; z-index: 1; opacity: 0.4; }
+        
+        #panel-container { position: relative; z-index: 2; width: 92%; max-width: 550px; margin: 30px auto; padding-bottom: 40px; }
+        
+        .panel { 
+            background: rgba(12, 12, 12, 0.85); 
+            backdrop-filter: blur(8px); 
+            border: 1px solid rgba(0, 255, 0, 0.2); 
+            border-radius: 16px; 
+            box-shadow: 0 8px 32px rgba(0, 255, 0, 0.1); 
+            padding: 25px; 
+        }
+        
+        .header { text-align: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .header h2 { margin: 0; color: #0f0; font-family: 'Courier New', monospace; letter-spacing: 2px; text-shadow: 0 0 10px rgba(0,255,0,0.5); }
+        
+        .stats { 
+            display: flex; justify-content: space-between; 
+            background: rgba(0, 255, 0, 0.05); padding: 12px 15px; 
+            border-radius: 8px; margin-bottom: 20px; 
+            font-weight: 600; font-size: 13px; color: #aaa; 
+            border: 1px solid rgba(0, 255, 0, 0.1); 
+        }
+        .stats span { color: #0f0; }
+
+        .server-box { 
+            background: rgba(0, 0, 0, 0.6); 
+            border: 1px solid #222; border-left: 4px solid #0f0; 
+            border-radius: 10px; padding: 18px; margin-bottom: 15px; 
+            transition: all 0.3s; 
+        }
+        .server-box:hover { border-color: rgba(0,255,0,0.4); box-shadow: 0 0 15px rgba(0,255,0,0.05); }
+        
+        .server-header { display: flex; justify-content: space-between; margin-bottom: 15px; font-weight: bold; font-size: 15px; }
+        .running { color: #0f0; text-shadow: 0 0 8px #0f0; }
+        .stopped { color: #f44336; text-shadow: 0 0 8px #f44336; }
+
+        .input-row { display: flex; gap: 12px; margin-bottom: 12px; }
+        input, select { 
+            flex: 1; background: #0a0a0a; border: 1px solid #333; color: #0f0; 
+            padding: 10px 12px; border-radius: 6px; box-sizing: border-box; 
+            font-family: 'Courier New', monospace; font-size: 13px; transition: 0.3s; 
+        }
+        input:focus, select:focus { outline: none; border-color: #0f0; box-shadow: 0 0 8px rgba(0,255,0,0.3); background: #000; }
+        .full-width { width: 100%; margin-bottom: 12px; }
+
+        .btn-group { display: flex; gap: 12px; margin-top: 15px; }
+        button { 
+            flex: 1; padding: 12px; font-weight: bold; font-family: 'Segoe UI', sans-serif; 
+            cursor: pointer; border: none; border-radius: 6px; text-transform: uppercase; 
+            letter-spacing: 1px; transition: 0.3s; font-size: 12px; 
+        }
+        .btn-start { background: rgba(0, 255, 0, 0.1); color: #0f0; border: 1px solid #0f0; }
+        .btn-start:hover { background: #0f0; color: #000; box-shadow: 0 0 15px rgba(0,255,0,0.4); }
+        .btn-stop { background: rgba(244, 67, 54, 0.1); color: #f44336; border: 1px solid #f44336; }
+        .btn-stop:hover { background: #f44336; color: #fff; box-shadow: 0 0 15px rgba(244,67,54,0.4); }
+
+        /* The New Circular Add/Remove Slot Buttons */
+        .slot-controls { display: flex; justify-content: center; gap: 20px; margin-top: 25px; }
+        .circle-btn { 
+            width: 50px; height: 50px; border-radius: 50%; border: 2px solid #0f0; 
+            background: rgba(0,255,0,0.1); color: #0f0; font-size: 28px; font-weight: 300; 
+            cursor: pointer; display: flex; align-items: center; justify-content: center; 
+            transition: all 0.3s ease; flex: none; padding: 0; line-height: 1;
+        }
+        .circle-btn:hover { background: #0f0; color: #000; box-shadow: 0 0 20px rgba(0,255,0,0.6); transform: scale(1.1); }
+        
+        .circle-btn.minus { border-color: #f44336; color: #f44336; background: rgba(244,67,54,0.1); }
+        .circle-btn.minus:hover { background: #f44336; color: #fff; box-shadow: 0 0 20px rgba(244,67,54,0.6); transform: scale(1.1); }
     </style>
 </head>
 <body>
@@ -89,18 +130,19 @@ HTML_UI = """
         </div>
         
         <div class="stats">
-            <span id="cpu">CPU: --%</span>
-            <span id="ram">RAM: --%</span>
+            <span id="cpu">CPU: --</span>
+            <span id="ram">RAM: --</span>
             <span id="active">ACTIVE ENGINES: -</span>
-        </div>
-
-        <div class="slot-controls">
-            <button class="btn-action" onclick="adjustSlots('add')">[ + ADD ENGINE SLOT ]</button>
-            <button class="btn-danger-action" onclick="adjustSlots('remove')">[ - REMOVE LAST SLOT ]</button>
         </div>
 
         <div id="servers">
             <!-- Dynamically Injected Engines -->
+        </div>
+
+        <!-- Smart Circular Buttons -->
+        <div class="slot-controls">
+            <button class="circle-btn" onclick="adjustSlots('add')" title="Add New Slot">+</button>
+            <button class="circle-btn minus" id="btn-remove" onclick="adjustSlots('remove')" style="display: none;" title="Remove Last Slot">-</button>
         </div>
     </div>
 </div>
@@ -133,7 +175,6 @@ HTML_UI = """
     function renderServers(data) {
         let html = '';
         
-        // Dynamically parse numerical keys coming from python dictionary state
         let keys = Object.keys(data).filter(k => !['cpu', 'ram', 'active'].includes(k)).sort((a, b) => parseInt(a) - parseInt(b));
         
         keys.forEach(i => {
@@ -159,7 +200,7 @@ HTML_UI = """
                 <div class="input-row">
                     <select id="speed_${i}">
                         <option value="1">Normal Speed</option>
-                        <option value="2">Anti-Bot Bypass (Sonar)</option>
+                        <option value="2">Anti-Bot Bypass</option>
                         <option value="3">Ultra Fast</option>
                     </select>
                     <select id="afk_${i}">
@@ -185,6 +226,14 @@ HTML_UI = """
         document.getElementById('cpu').innerText = `CPU: ${data.cpu}`;
         document.getElementById('ram').innerText = `RAM: ${data.ram}`;
         document.getElementById('active').innerText = `ACTIVE ENGINES: ${data.active}`;
+
+        // Smart Visibility Logic for Minus Button
+        const minusBtn = document.getElementById('btn-remove');
+        if (keys.length > 1) {
+            minusBtn.style.display = 'flex';
+        } else {
+            minusBtn.style.display = 'none';
+        }
     }
 
     function fetchStats() {
@@ -237,7 +286,7 @@ def stats():
     try:
         cpu_usage = f"{psutil.cpu_percent(interval=None)}%"
     except Exception:
-        cpu_usage = "N/A (Android Locked)"
+        cpu_usage = "N/A (Locked)"
         
     try:
         ram_usage = f"{psutil.virtual_memory().percent}%"
