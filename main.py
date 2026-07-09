@@ -8,7 +8,7 @@ import subprocess
 from flask import Flask, render_template_string, jsonify, request
 
 # =====================================================================
-# OP INJOY VIP BOT - PROFESSIONAL EDITION
+# OP INJOY VIP BOT - PROFESSIONAL EDITION (V6)
 # =====================================================================
 
 app = Flask(__name__)
@@ -36,7 +36,7 @@ def get_local_ip():
         return "127.0.0.1"
 
 # =====================================================================
-# FRONTEND UI (Premium Dashboard, Clean Typography, Modern Colors)
+# FRONTEND UI (Premium Dashboard with Better Stat Tracking)
 # =====================================================================
 HTML_UI = """
 <!DOCTYPE html>
@@ -83,7 +83,6 @@ HTML_UI = """
             overflow: hidden;
         }
         
-        /* Top brand accent line */
         .panel::before {
             content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px;
             background: linear-gradient(90deg, var(--brand-primary), #8B5CF6);
@@ -174,11 +173,13 @@ HTML_UI = """
         <div class="stats">
             <span id="cpu">CPU: --</span>
             <span id="ram">RAM: --</span>
-            <span id="active">ACTIVE ENGINES: -</span>
+            <span id="slots">TOTAL SLOTS: -</span>
+            <span id="active">RUNNING: -</span>
         </div>
 
         <div id="servers">
-            </div>
+            <!-- Dynamically Injected Engines -->
+        </div>
 
         <div class="slot-controls">
             <button class="circle-btn" onclick="adjustSlots('add')" title="Add New Slot">+</button>
@@ -190,7 +191,7 @@ HTML_UI = """
 <script>
     function renderServers(data) {
         let html = '';
-        let keys = Object.keys(data).filter(k => !['cpu', 'ram', 'active'].includes(k)).sort((a, b) => parseInt(a) - parseInt(b));
+        let keys = Object.keys(data).filter(k => !['cpu', 'ram', 'active', 'total_slots'].includes(k)).sort((a, b) => parseInt(a) - parseInt(b));
         
         keys.forEach(i => {
             let srv = data[i];
@@ -239,7 +240,8 @@ HTML_UI = """
         
         document.getElementById('cpu').innerText = `CPU: ${data.cpu}`;
         document.getElementById('ram').innerText = `RAM: ${data.ram}`;
-        document.getElementById('active').innerText = `ACTIVE ENGINES: ${data.active}`;
+        document.getElementById('slots').innerText = `TOTAL SLOTS: ${data.total_slots}`;
+        document.getElementById('active').innerText = `RUNNING: ${data.active}`;
 
         const minusBtn = document.getElementById('btn-remove');
         if (keys.length > 1) {
@@ -307,8 +309,9 @@ def stats():
         ram_usage = "N/A"
         
     active_count = sum(1 for s in bot_servers.values() if s['status'] == 'RUNNING')
+    total_slots = len(bot_servers)
     
-    response = {"cpu": cpu_usage, "ram": ram_usage, "active": active_count}
+    response = {"cpu": cpu_usage, "ram": ram_usage, "active": active_count, "total_slots": total_slots}
     response.update(bot_servers)
     return jsonify(response)
 
