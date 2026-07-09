@@ -13,7 +13,7 @@ from flask import Flask, render_template_string, jsonify, request
 
 app = Flask(__name__)
 
-# State management for 4 concurrent OP INJOY deployments
+# Initial dynamic state management starting with 4 slots
 bot_servers = {
     "1": {"status": "STOPPED", "target": "", "bots": "10", "edition": "3", "pid": None},
     "2": {"status": "STOPPED", "target": "", "bots": "10", "edition": "3", "pid": None},
@@ -40,7 +40,7 @@ def get_local_ip():
         return "127.0.0.1"
 
 # =====================================================================
-# FRONTEND UI (Matrix Rain + Minecraft V4 Configuration)
+# FRONTEND UI (Matrix Rain + Dynamic Engine Configuration)
 # =====================================================================
 HTML_UI = """
 <!DOCTYPE html>
@@ -56,7 +56,8 @@ HTML_UI = """
         .panel { border: 2px solid #0f0; background: rgba(0, 0, 0, 0.85); box-shadow: 0 0 20px rgba(0, 255, 0, 0.4); padding: 20px; }
         .header { text-align: center; border-bottom: 2px solid #0f0; padding-bottom: 10px; margin-bottom: 20px; }
         .header h2 { margin: 0; text-shadow: 0 0 10px #0f0; }
-        .stats { display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; margin-bottom: 20px; }
+        .stats { display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; margin-bottom: 15px; }
+        .slot-controls { display: flex; gap: 10px; margin-bottom: 20px; }
         .server-box { border: 1px dashed #0f0; padding: 15px; margin-bottom: 15px; }
         .server-header { display: flex; justify-content: space-between; margin-bottom: 10px; font-weight: bold; }
         .running { color: #0f0; text-shadow: 0 0 5px #0f0; }
@@ -71,6 +72,10 @@ HTML_UI = """
         .btn-start:hover { background: #fff; box-shadow: 0 0 10px #0f0; }
         .btn-stop { background: #f00; color: #fff; }
         .btn-stop:hover { background: #fff; color: #f00; box-shadow: 0 0 10px #f00; }
+        .btn-action { background: #111; border: 1px solid #0f0; color: #0f0; padding: 10px; text-align: center; font-size: 13px; }
+        .btn-action:hover { background: #0f0; color: #000; box-shadow: 0 0 10px #0f0; }
+        .btn-danger-action { background: #111; border: 1px solid #f00; color: #f00; padding: 10px; text-align: center; font-size: 13px; }
+        .btn-danger-action:hover { background: #f00; color: #fff; box-shadow: 0 0 10px #f00; }
     </style>
 </head>
 <body>
@@ -89,8 +94,13 @@ HTML_UI = """
             <span id="active">ACTIVE ENGINES: -</span>
         </div>
 
+        <div class="slot-controls">
+            <button class="btn-action" onclick="adjustSlots('add')">[ + ADD ENGINE SLOT ]</button>
+            <button class="btn-danger-action" onclick="adjustSlots('remove')">[ - REMOVE LAST SLOT ]</button>
+        </div>
+
         <div id="servers">
-            <!-- Injected via JS -->
+            <!-- Dynamically Injected Engines -->
         </div>
     </div>
 </div>
@@ -122,8 +132,12 @@ HTML_UI = """
 
     function renderServers(data) {
         let html = '';
-        for (let i = 1; i <= 4; i++) {
-            let srv = data[i.toString()];
+        
+        // Dynamically parse numerical keys coming from python dictionary state
+        let keys = Object.keys(data).filter(k => !['cpu', 'ram', 'active'].includes(k)).sort((a, b) => parseInt(a) - parseInt(b));
+        
+        keys.forEach(i => {
+            let srv = data[i];
             let statusClass = srv.status === 'RUNNING' ? 'running' : 'stopped';
             let icon = srv.status === 'RUNNING' ? '✔' : '✗';
             
@@ -136,11 +150,11 @@ HTML_UI = """
                 <input class="full-width" type="text" id="target_${i}" placeholder="IP:Port (e.g. play.example.com:19132)" value="${srv.target}">
                 <div class="input-row">
                     <select id="edition_${i}">
-                        <option value="1">Java Only</option>
-                        <option value="2">Bedrock Only</option>
-                        <option value="3" selected>Hybrid (Both)</option>
+                        <option value="1" ${srv.edition === '1' ? 'selected' : ''}>Java Only</option>
+                        <option value="2" ${srv.edition === '2' ? 'selected' : ''}>Bedrock Only</option>
+                        <option value="3" ${srv.edition === '3' || !srv.edition ? 'selected' : ''}>Hybrid (Both)</option>
                     </select>
-                    <input type="number" id="bots_${i}" placeholder="Total Bots" value="10">
+                    <input type="number" id="bots_${i}" placeholder="Total Bots" value="${srv.bots}">
                 </div>
                 <div class="input-row">
                     <select id="speed_${i}">
@@ -160,7 +174,7 @@ HTML_UI = """
                     <button class="btn-stop" onclick="sendAction(${i}, 'stop')">[ KILL BOTS ]</button>
                 </div>
             </div>`;
-        }
+        });
         
         const focused = document.activeElement;
         const container = document.getElementById('servers');
@@ -195,6 +209,14 @@ HTML_UI = """
         }).then(() => fetchStats());
     }
 
+    function adjustSlots(action) {
+        fetch('/api/slots', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({action: action})
+        }).then(() => fetchStats());
+    }
+
     setInterval(fetchStats, 2000);
     fetchStats();
 </script>
@@ -212,7 +234,6 @@ def index():
 
 @app.route('/api/stats')
 def stats():
-    # Bypass Android restriction on /proc/stat
     try:
         cpu_usage = f"{psutil.cpu_percent(interval=None)}%"
     except Exception:
@@ -228,6 +249,28 @@ def stats():
     response = {"cpu": cpu_usage, "ram": ram_usage, "active": active_count}
     response.update(bot_servers)
     return jsonify(response)
+
+@app.route('/api/slots', methods=['POST'])
+def adjust_slots():
+    data = request.json
+    action = data.get('action')
+    global bot_servers
+    
+    if action == 'add':
+        next_id = str(len(bot_servers) + 1)
+        bot_servers[next_id] = {"status": "STOPPED", "target": "", "bots": "10", "edition": "3", "pid": None}
+        print(f"[+] Added Dynamic Engine Slot #{next_id}")
+    elif action == 'remove':
+        if len(bot_servers) > 1:
+            last_id = str(len(bot_servers))
+            pid = bot_servers[last_id].get('pid')
+            if pid:
+                try: os.kill(pid, 9)
+                except: pass
+            del bot_servers[last_id]
+            print(f"[-] Removed Dynamic Engine Slot #{last_id}")
+            
+    return jsonify({"success": True})
 
 @app.route('/api/action', methods=['POST'])
 def action():
@@ -277,7 +320,6 @@ def action():
 # =====================================================================
 if __name__ == '__main__':
     os.system('clear' if os.name == 'posix' else 'cls')
-    
     network_ip = get_local_ip()
     
     print("\033[96m\033[1m========================================\033[0m")
@@ -287,7 +329,6 @@ if __name__ == '__main__':
     print("\033[93m[*] ROOT ACCESS:       http://injoy:9000\033[0m")
     print(f"\033[93m[*] LAN / WiFi ACCESS: http://{network_ip}:9000\033[0m\n")
     
-    # Bypass Android restriction on /proc/stat
     try:
         psutil.cpu_percent()
     except Exception:
