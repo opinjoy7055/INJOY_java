@@ -5,7 +5,7 @@ Write-Host "==================================================" -ForegroundColor
 $TargetDir = "$env:USERPROFILE\OP_INJOY_PANEL"
 $RepoUrl = "https://github.com/opinjoy7055/INJOY_java.git"
 
-# 1. Install Dependencies (Including Windows CMake compiler support)
+# 1. Install Dependencies 
 $deps = @("git", "node", "python", "cmake")
 foreach ($dep in $deps) {
     if (!(Get-Command $dep -ErrorAction SilentlyContinue)) {
@@ -18,7 +18,7 @@ foreach ($dep in $deps) {
 }
 $env:Path = [System.Environment]::GetEnvironmentVariable('Path','Machine') + ';' + [System.Environment]::GetEnvironmentVariable('Path','User')
 
-# 2. Smart Git Update (Prevents rebuilding node_modules)
+# 2. Smart Git Update 
 Write-Host "[*] Updating OP INJOY Repository..." -ForegroundColor Yellow
 if (Test-Path "$TargetDir\.git") { 
     Set-Location -Path $TargetDir
@@ -35,7 +35,19 @@ python -m pip install flask psutil -q
 
 $Env:JOBS = "max"
 $Env:npm_config_jobs = "max"
-npm install mineflayer@latest bedrock-protocol@latest minecraft-data@latest --no-audit --no-fund --foreground-scripts
+
+# Step A: Download but DO NOT compile
+npm install mineflayer@latest bedrock-protocol@latest minecraft-data@latest --no-audit --no-fund --ignore-scripts
+
+# Step B: Patch the Clang -1 bug
+Write-Host "[*] Patching C++ Compiler Bug..." -ForegroundColor Yellow
+Get-ChildItem -Path "node_modules" -Filter "napi.h" -Recurse -ErrorAction SilentlyContinue | ForEach-Object {
+    (Get-Content $_.FullName) -replace 'static_cast<napi_typedarray_type>\(-1\)', 'static_cast<napi_typedarray_type>(0)' | Set-Content $_.FullName
+}
+
+# Step C: Compile
+Write-Host "[*] Compiling Modules..." -ForegroundColor Yellow
+npm rebuild --foreground-scripts
 
 # 4. Create Shortcut
 $batContent = "@echo off`ncd /d ""$TargetDir""`npython main.py"
