@@ -7,7 +7,7 @@ echo -e "${CYAN}==================================================${NC}"
 TARGET_DIR="$HOME/OP_INJOY_PANEL"
 REPO_URL="https://github.com/opinjoy7055/INJOY_java.git"
 
-# 1. Install Dependencies (Pre-installing Native Compilers)
+# 1. Install Dependencies
 if [ -d "/data/data/com.termux" ]; then
     echo -e "${YELLOW}[*] Installing Termux Dependencies...${NC}"
     pkg update -y && pkg upgrade -y
@@ -20,7 +20,7 @@ elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
     pip3 install flask psutil
 fi
 
-# 2. Smart Git Update (Prevents deleting compiled node_modules)
+# 2. Smart Git Update
 echo -e "${YELLOW}[*] Updating OP INJOY Repository...${NC}"
 if [ -d "$TARGET_DIR/.git" ]; then
     cd "$TARGET_DIR" || exit
@@ -31,12 +31,20 @@ else
 fi
 
 # 3. High-Speed Live Compilation Build Phase
-echo -e "${YELLOW}[*] Installing Bot Modules (Showing Live C++ Build)...${NC}"
+echo -e "${YELLOW}[*] Installing Bot Modules...${NC}"
 export JOBS=max
 export npm_config_jobs=max
 
-# --foreground-scripts keeps the live build percentage visible
-npm install mineflayer@latest bedrock-protocol@latest minecraft-data@latest --no-audit --no-fund --foreground-scripts
+# Step A: Download but DO NOT compile yet
+npm install mineflayer@latest bedrock-protocol@latest minecraft-data@latest --no-audit --no-fund --ignore-scripts
+
+# Step B: Patch the Clang -1 bug in node-addon-api
+echo -e "${YELLOW}[*] Patching Clang Compiler Bug...${NC}"
+find node_modules -name "napi.h" -exec sed -i 's/static_cast<napi_typedarray_type>(-1)/static_cast<napi_typedarray_type>(0)/g' {} +
+
+# Step C: Now compile the patched code
+echo -e "${YELLOW}[*] Compiling C++ Modules...${NC}"
+npm rebuild --foreground-scripts
 
 # 4. Create launch command shortcut
 BIN_PATH="/data/data/com.termux/files/usr/bin/op-injoy"
