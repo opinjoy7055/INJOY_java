@@ -5,7 +5,7 @@ Write-Host "==================================================" -ForegroundColor
 $TargetDir = "$env:USERPROFILE\OP_INJOY_PANEL"
 $RepoUrl = "https://github.com/opinjoy7055/INJOY_java.git"
 
-# 1. Install Dependencies 
+# 1. Install Dependencies (Including Windows CMake compiler support)
 $deps = @("git", "node", "python", "cmake")
 foreach ($dep in $deps) {
     if (!(Get-Command $dep -ErrorAction SilentlyContinue)) {
@@ -18,7 +18,7 @@ foreach ($dep in $deps) {
 }
 $env:Path = [System.Environment]::GetEnvironmentVariable('Path','Machine') + ';' + [System.Environment]::GetEnvironmentVariable('Path','User')
 
-# 2. Smart Git Update (DO NOT DELETE FOLDER)
+# 2. Smart Git Update (Prevents rebuilding node_modules)
 Write-Host "[*] Updating OP INJOY Repository..." -ForegroundColor Yellow
 if (Test-Path "$TargetDir\.git") { 
     Set-Location -Path $TargetDir
@@ -29,16 +29,25 @@ if (Test-Path "$TargetDir\.git") {
     Set-Location -Path $TargetDir
 }
 
-# 3. Fast NPM Install (Multi-core & Cached)
+# 3. High-Speed Live Compilation Build Phase
 Write-Host "[*] Installing Python & Node Modules..." -ForegroundColor Yellow
 python -m pip install flask psutil -q
 
 $Env:JOBS = "max"
 $Env:npm_config_jobs = "max"
-npm install mineflayer@latest bedrock-protocol@latest minecraft-data@latest --no-audit --no-fund --prefer-offline --loglevel error
+npm install mineflayer@latest bedrock-protocol@latest minecraft-data@latest --no-audit --no-fund --foreground-scripts
 
-# 4. Shortcut
+# 4. Create Shortcut
 $batContent = "@echo off`ncd /d ""$TargetDir""`npython main.py"
 $batContent | Out-File -FilePath "$env:USERPROFILE\op-injoy.bat" -Encoding ascii
 
-Write-Host "[✔] INSTALLATION COMPLETE! Type 'op-injoy' to start." -ForegroundColor Green
+Write-Host "==================================================" -ForegroundColor Green
+Write-Host "[✔] INSTALLATION COMPLETE!" -ForegroundColor Green
+Write-Host "==================================================" -ForegroundColor Cyan
+Write-Host "1. QUICK START (Shortcut):" -ForegroundColor White
+Write-Host "   Open CMD/PowerShell and type: op-injoy" -ForegroundColor Yellow
+Write-Host "" -ForegroundColor White
+Write-Host "2. MANUAL START (Direct):" -ForegroundColor White
+Write-Host "   cd %USERPROFILE%\OP_INJOY_PANEL" -ForegroundColor Yellow
+Write-Host "   python main.py" -ForegroundColor Yellow
+Write-Host "==================================================" -ForegroundColor Green
