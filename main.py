@@ -8,12 +8,11 @@ import subprocess
 from flask import Flask, render_template_string, jsonify, request
 
 # =====================================================================
-# OP INJOY VIP SYSTEM - MINECRAFT ENGINE (V5 UI REVAMP)
+# OP INJOY VIP SYSTEM - MINECRAFT ENGINE (MOBILE & PREMIUM UI)
 # =====================================================================
 
 app = Flask(__name__)
 
-# Start with ONLY 1 Slot by default
 bot_servers = {
     "1": {"status": "STOPPED", "target": "", "bots": "10", "edition": "3", "pid": None}
 }
@@ -37,86 +36,94 @@ def get_local_ip():
         return "127.0.0.1"
 
 # =====================================================================
-# FRONTEND UI (Modern Glassmorphism + Smart Circular Buttons)
+# FRONTEND UI (Cyan Cyberpunk Theme + Mobile Responsive Fixes)
 # =====================================================================
 HTML_UI = """
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>OP INJOY VIP SYSTEM</title>
     <style>
-        body { margin: 0; padding: 0; background: #050505; color: #fff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overflow-x: hidden; }
-        canvas { display: block; position: fixed; top: 0; left: 0; z-index: 1; opacity: 0.4; }
+        :root {
+            --primary: #00e5ff;  /* Neon Cyan */
+            --danger: #ff1744;   /* Crimson Red */
+            --bg-dark: #0a0b10;
+            --panel-bg: rgba(16, 20, 28, 0.85);
+            --text-main: #e0e0e0;
+        }
+        body { margin: 0; padding: 0; background: var(--bg-dark); color: var(--text-main); font-family: 'Segoe UI', system-ui, sans-serif; overflow-x: hidden; }
+        canvas { display: block; position: fixed; top: 0; left: 0; z-index: 1; opacity: 0.35; }
         
-        #panel-container { position: relative; z-index: 2; width: 92%; max-width: 550px; margin: 30px auto; padding-bottom: 40px; }
+        /* Mobile Spacing Fixes */
+        #panel-container { position: relative; z-index: 2; width: 94%; max-width: 550px; margin: 20px auto; padding-bottom: 40px; box-sizing: border-box; }
         
         .panel { 
-            background: rgba(12, 12, 12, 0.85); 
-            backdrop-filter: blur(8px); 
-            border: 1px solid rgba(0, 255, 0, 0.2); 
-            border-radius: 16px; 
-            box-shadow: 0 8px 32px rgba(0, 255, 0, 0.1); 
-            padding: 25px; 
+            background: var(--panel-bg); 
+            backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(0, 229, 255, 0.2); 
+            border-radius: 12px; 
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6), 0 0 20px rgba(0, 229, 255, 0.05); 
+            padding: 20px; 
+            box-sizing: border-box;
         }
         
-        .header { text-align: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.05); }
-        .header h2 { margin: 0; color: #0f0; font-family: 'Courier New', monospace; letter-spacing: 2px; text-shadow: 0 0 10px rgba(0,255,0,0.5); }
+        .header { text-align: center; margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 15px; }
+        .header h2 { margin: 0; color: var(--primary); font-family: 'Courier New', monospace; letter-spacing: 1px; text-shadow: 0 0 15px rgba(0,229,255,0.4); font-size: 22px; }
         
+        /* Fixed Stats for Mobile (Wraps smoothly) */
         .stats { 
-            display: flex; justify-content: space-between; 
-            background: rgba(0, 255, 0, 0.05); padding: 12px 15px; 
+            display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 15px;
+            background: rgba(0, 0, 0, 0.5); padding: 12px; 
             border-radius: 8px; margin-bottom: 20px; 
-            font-weight: 600; font-size: 13px; color: #aaa; 
-            border: 1px solid rgba(0, 255, 0, 0.1); 
+            font-weight: 600; font-size: 13px; color: #888; 
+            border: 1px solid rgba(255,255,255,0.05); 
         }
-        .stats span { color: #0f0; }
+        .stats span { color: var(--primary); }
 
         .server-box { 
-            background: rgba(0, 0, 0, 0.6); 
-            border: 1px solid #222; border-left: 4px solid #0f0; 
-            border-radius: 10px; padding: 18px; margin-bottom: 15px; 
-            transition: all 0.3s; 
+            background: rgba(0, 0, 0, 0.4); 
+            border: 1px solid #222; border-left: 4px solid var(--primary); 
+            border-radius: 8px; padding: 15px; margin-bottom: 15px; 
+            box-sizing: border-box; width: 100%;
         }
-        .server-box:hover { border-color: rgba(0,255,0,0.4); box-shadow: 0 0 15px rgba(0,255,0,0.05); }
         
-        .server-header { display: flex; justify-content: space-between; margin-bottom: 15px; font-weight: bold; font-size: 15px; }
-        .running { color: #0f0; text-shadow: 0 0 8px #0f0; }
-        .stopped { color: #f44336; text-shadow: 0 0 8px #f44336; }
+        .server-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; font-weight: bold; font-size: 14px; }
+        .running { color: var(--primary); text-shadow: 0 0 8px var(--primary); }
+        .stopped { color: var(--danger); text-shadow: 0 0 8px var(--danger); }
 
-        .input-row { display: flex; gap: 12px; margin-bottom: 12px; }
+        /* Fixed Overflow: Flex-wrap allows boxes to drop down if screen is too small */
+        .input-row { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; width: 100%; }
         input, select { 
-            flex: 1; background: #0a0a0a; border: 1px solid #333; color: #0f0; 
-            padding: 10px 12px; border-radius: 6px; box-sizing: border-box; 
-            font-family: 'Courier New', monospace; font-size: 13px; transition: 0.3s; 
+            flex: 1 1 40%; background: #12141a; border: 1px solid #333; color: #fff; 
+            padding: 12px 10px; border-radius: 6px; box-sizing: border-box; 
+            font-family: 'Courier New', monospace; font-size: 13px; outline: none; transition: 0.3s;
         }
-        input:focus, select:focus { outline: none; border-color: #0f0; box-shadow: 0 0 8px rgba(0,255,0,0.3); background: #000; }
-        .full-width { width: 100%; margin-bottom: 12px; }
+        input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 8px rgba(0,229,255,0.3); background: #000; }
+        .full-width { width: 100%; flex: 1 1 100%; }
 
-        .btn-group { display: flex; gap: 12px; margin-top: 15px; }
+        .btn-group { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 15px; width: 100%; }
         button { 
-            flex: 1; padding: 12px; font-weight: bold; font-family: 'Segoe UI', sans-serif; 
-            cursor: pointer; border: none; border-radius: 6px; text-transform: uppercase; 
-            letter-spacing: 1px; transition: 0.3s; font-size: 12px; 
+            flex: 1 1 45%; padding: 12px 5px; font-weight: bold; font-family: 'Segoe UI', sans-serif; 
+            cursor: pointer; border: none; border-radius: 6px; font-size: 13px; transition: 0.3s; 
+            text-transform: uppercase; letter-spacing: 1px;
         }
-        .btn-start { background: rgba(0, 255, 0, 0.1); color: #0f0; border: 1px solid #0f0; }
-        .btn-start:hover { background: #0f0; color: #000; box-shadow: 0 0 15px rgba(0,255,0,0.4); }
-        .btn-stop { background: rgba(244, 67, 54, 0.1); color: #f44336; border: 1px solid #f44336; }
-        .btn-stop:hover { background: #f44336; color: #fff; box-shadow: 0 0 15px rgba(244,67,54,0.4); }
+        .btn-start { background: rgba(0, 229, 255, 0.1); color: var(--primary); border: 1px solid var(--primary); }
+        .btn-start:hover { background: var(--primary); color: #000; box-shadow: 0 0 15px rgba(0,229,255,0.5); }
+        .btn-stop { background: rgba(255, 23, 68, 0.1); color: var(--danger); border: 1px solid var(--danger); }
+        .btn-stop:hover { background: var(--danger); color: #fff; box-shadow: 0 0 15px rgba(255,23,68,0.5); }
 
-        /* The New Circular Add/Remove Slot Buttons */
         .slot-controls { display: flex; justify-content: center; gap: 20px; margin-top: 25px; }
         .circle-btn { 
-            width: 50px; height: 50px; border-radius: 50%; border: 2px solid #0f0; 
-            background: rgba(0,255,0,0.1); color: #0f0; font-size: 28px; font-weight: 300; 
-            cursor: pointer; display: flex; align-items: center; justify-content: center; 
-            transition: all 0.3s ease; flex: none; padding: 0; line-height: 1;
+            width: 50px; height: 50px; border-radius: 50%; border: 2px solid var(--primary); 
+            background: rgba(0,229,255,0.1); color: var(--primary); font-size: 26px; 
+            font-weight: 300; display: flex; align-items: center; justify-content: center; 
+            padding: 0; line-height: 0; flex: none; -webkit-tap-highlight-color: transparent;
         }
-        .circle-btn:hover { background: #0f0; color: #000; box-shadow: 0 0 20px rgba(0,255,0,0.6); transform: scale(1.1); }
-        
-        .circle-btn.minus { border-color: #f44336; color: #f44336; background: rgba(244,67,54,0.1); }
-        .circle-btn.minus:hover { background: #f44336; color: #fff; box-shadow: 0 0 20px rgba(244,67,54,0.6); transform: scale(1.1); }
+        .circle-btn:hover, .circle-btn:active { background: var(--primary); color: #000; box-shadow: 0 0 20px rgba(0,229,255,0.6); transform: scale(1.05); }
+        .circle-btn.minus { border-color: var(--danger); color: var(--danger); background: rgba(255,23,68,0.1); }
+        .circle-btn.minus:hover, .circle-btn.minus:active { background: var(--danger); color: #fff; box-shadow: 0 0 20px rgba(255,23,68,0.6); }
     </style>
 </head>
 <body>
@@ -139,7 +146,6 @@ HTML_UI = """
             <!-- Dynamically Injected Engines -->
         </div>
 
-        <!-- Smart Circular Buttons -->
         <div class="slot-controls">
             <button class="circle-btn" onclick="adjustSlots('add')" title="Add New Slot">+</button>
             <button class="circle-btn minus" id="btn-remove" onclick="adjustSlots('remove')" style="display: none;" title="Remove Last Slot">-</button>
@@ -158,9 +164,10 @@ HTML_UI = """
     const drops = Array.from({length: columns}).fill(1);
 
     function drawMatrix() {
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+        ctx.fillStyle = 'rgba(10, 11, 16, 0.05)';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = '#0F0';
+        // Changed matrix to Cyan
+        ctx.fillStyle = '#00e5ff'; 
         ctx.font = fontSize + 'px monospace';
         for (let i = 0; i < drops.length; i++) {
             const text = chars.charAt(Math.floor(Math.random() * chars.length));
@@ -174,7 +181,6 @@ HTML_UI = """
 
     function renderServers(data) {
         let html = '';
-        
         let keys = Object.keys(data).filter(k => !['cpu', 'ram', 'active'].includes(k)).sort((a, b) => parseInt(a) - parseInt(b));
         
         keys.forEach(i => {
@@ -227,7 +233,6 @@ HTML_UI = """
         document.getElementById('ram').innerText = `RAM: ${data.ram}`;
         document.getElementById('active').innerText = `ACTIVE ENGINES: ${data.active}`;
 
-        // Smart Visibility Logic for Minus Button
         const minusBtn = document.getElementById('btn-remove');
         if (keys.length > 1) {
             minusBtn.style.display = 'flex';
@@ -308,7 +313,6 @@ def adjust_slots():
     if action == 'add':
         next_id = str(len(bot_servers) + 1)
         bot_servers[next_id] = {"status": "STOPPED", "target": "", "bots": "10", "edition": "3", "pid": None}
-        print(f"[+] Added Dynamic Engine Slot #{next_id}")
     elif action == 'remove':
         if len(bot_servers) > 1:
             last_id = str(len(bot_servers))
@@ -317,7 +321,6 @@ def adjust_slots():
                 try: os.kill(pid, 9)
                 except: pass
             del bot_servers[last_id]
-            print(f"[-] Removed Dynamic Engine Slot #{last_id}")
             
     return jsonify({"success": True})
 
@@ -337,8 +340,6 @@ def action():
             bot_servers[s_id]['target'] = data.get('target', '')
             bot_servers[s_id]['bots'] = data.get('bots', '10')
             
-            print(f"[+] Deploying OP INJOY #{s_id} -> {bot_servers[s_id]['target']} | Bots: {bot_servers[s_id]['bots']}")
-            
             env_vars = os.environ.copy()
             env_vars['TARGET_IP'] = bot_servers[s_id]['target']
             env_vars['BOT_COUNT'] = str(bot_servers[s_id]['bots'])
@@ -357,7 +358,6 @@ def action():
             bot_servers[s_id]['status'] = 'STOPPED'
             pid = bot_servers[s_id].get('pid')
             if pid:
-                print(f"[-] Killing OP INJOY #{s_id} (PID: {pid})")
                 try: os.kill(pid, 9)
                 except: pass
                 bot_servers[s_id]['pid'] = None
@@ -372,7 +372,7 @@ if __name__ == '__main__':
     network_ip = get_local_ip()
     
     print("\033[96m\033[1m========================================\033[0m")
-    print("\033[92m\033[1m  OP INJOY MINECRAFT WEB PANEL \033[0m")
+    print("\033[94m\033[1m  OP INJOY MINECRAFT WEB PANEL \033[0m")
     print("\033[96m\033[1m========================================\033[0m")
     print("\033[93m[*] LOCAL (Non-Root):  http://localhost:9000\033[0m")
     print("\033[93m[*] ROOT ACCESS:       http://injoy:9000\033[0m")
