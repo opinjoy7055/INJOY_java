@@ -1,14 +1,16 @@
 import os
 import sys
 import time
+import json
 import socket
 import threading
 import psutil
 import subprocess
+import urllib.request
 from flask import Flask, render_template_string, jsonify, request
 
 # =====================================================================
-# OP INJOY VIP BOT - V4 ULTIMATE EDITION
+# OP INJOY VIP BOT - V4 ULTIMATE EDITION (NGROK AUTOMATED)
 # =====================================================================
 
 app = Flask(__name__)
@@ -17,10 +19,12 @@ bot_servers = {
     "1": {"status": "STOPPED", "target": "", "bots": "10", "edition": "3", "pid": None}
 }
 
+NGROK_TOKEN = "3GJ5D4g5OuBxCgqu0LbGo40mjn3_49YVQFhdVTy36jHdmugN8"
+
 def auto_restart_sequence():
     time.sleep(7200)
     print("\n[!] 2 Hours reached. OP INJOY System Auto-Restarting...")
-    os.system("pkill -f node")
+    os.system("pkill -9 node; pkill -9 ngrok")
     os.execv(sys.executable, ['python3'] + sys.argv)
 
 threading.Thread(target=auto_restart_sequence, daemon=True).start()
@@ -34,6 +38,25 @@ def get_local_ip():
         return ip
     except:
         return "127.0.0.1"
+
+def start_ngrok_background():
+    try:
+        # Authenticate and kill any old sessions
+        os.system(f"ngrok config add-authtoken {NGROK_TOKEN} > /dev/null 2>&1")
+        os.system("pkill -9 ngrok > /dev/null 2>&1")
+        
+        # Start tunnel silently
+        subprocess.Popen(['ngrok', 'http', '9000'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        time.sleep(3) # Wait for tunnel to connect
+        
+        # Fetch the live public URL directly from Ngrok's internal API
+        req = urllib.request.Request("http://127.0.0.1:4040/api/tunnels")
+        with urllib.request.urlopen(req) as response:
+            data = json.loads(response.read().decode())
+            public_url = data['tunnels'][0]['public_url']
+            print(f"\033[92m\033[1m[*] GLOBAL ACCESS (Ngrok): {public_url}\033[0m\n")
+    except Exception:
+        print("\033[93m[*] Ngrok failed to start automatically. Ensure ngrok is installed.\033[0m\n")
 
 # =====================================================================
 # FRONTEND UI (Fully Expanded for Easy Editing)
@@ -403,7 +426,11 @@ if __name__ == '__main__':
     print("\033[94m\033[1m========================================\033[0m")
     print("\033[92m[*] LOCAL (Non-Root):  http://localhost:9000\033[0m")
     print("\033[92m[*] ROOT ACCESS:       http://injoy:9000\033[0m")
-    print(f"\033[92m[*] LAN / WiFi ACCESS: http://{network_ip}:9000\033[0m\n")
+    print(f"\033[92m[*] LAN / WiFi ACCESS: http://{network_ip}:9000\033[0m")
+    print("\033[93m[*] Establishing Ngrok Global Link...\033[0m")
+    
+    # Start ngrok in background and print public link
+    threading.Thread(target=start_ngrok_background, daemon=True).start()
     
     try:
         psutil.cpu_percent()
