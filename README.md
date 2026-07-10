@@ -14,7 +14,7 @@
 
   <!-- OP INJOY VIP ENGINE -->
   <span style="font-size: 32px; font-weight: 700; color:#00FF00;">
-    OP INJOY VIP ENGINE
+    OP INJOY VIP BOT 
   </span>
   <br>
 
