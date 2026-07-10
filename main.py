@@ -8,7 +8,7 @@ import subprocess
 from flask import Flask, render_template_string, jsonify, request
 
 # =====================================================================
-# OP INJOY VIP BOT - V4 ULTIMATE EDITION (INSTANT NGROK BOOT)
+# OP INJOY VIP BOT - V4 ULTIMATE EDITION (NGROK LOGGING BOOT)
 # =====================================================================
 
 app = Flask(__name__)
@@ -46,12 +46,15 @@ def start_ngrok_background():
             
         os.system(f"{ngrok_cmd} config add-authtoken {NGROK_TOKEN} > /dev/null 2>&1")
         os.system("pkill -9 ngrok > /dev/null 2>&1")
+        time.sleep(1)
         
-        # Force start with the exact v3 syntax and your static URL
-        subprocess.Popen([ngrok_cmd, 'http', f'--url={STATIC_URL}', '9000'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        # Started with strict --domain syntax and output logged to ngrok.log
+        log_file = open("ngrok.log", "w")
+        subprocess.Popen([ngrok_cmd, 'http', f'--domain={STATIC_URL}', '9000'], stdout=log_file, stderr=subprocess.STDOUT)
         
-        time.sleep(1) # Give it 1 second to hook the port
-        print(f"\033[92m\033[1m[*] GLOBAL ACCESS (Ngrok): https://{STATIC_URL}\033[0m\n")
+        time.sleep(2) 
+        print(f"\033[92m\033[1m[*] GLOBAL ACCESS (Ngrok): https://{STATIC_URL}\033[0m")
+        print("\033[90m[*] If link shows offline, type 'cat ngrok.log' to read the error.\033[0m\n")
     except Exception as e:
         print(f"\033[93m[*] Ngrok failed to start: {e}\033[0m\n")
 
