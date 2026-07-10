@@ -50,8 +50,8 @@ def start_ngrok_background():
         os.system(f"{ngrok_cmd} config add-authtoken {NGROK_TOKEN} > /dev/null 2>&1")
         os.system("pkill -9 ngrok > /dev/null 2>&1")
         
-        # Start tunnel silently with STATIC URL
-        subprocess.Popen([ngrok_cmd, 'http', '--url=pulsate-spoiling-entree.ngrok-free.dev', '9000'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        # Start tunnel silently with the CORRECT --domain flag
+        subprocess.Popen([ngrok_cmd, 'http', '--domain=pulsate-spoiling-entree.ngrok-free.dev', '9000'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         
         # Smart Wait Loop (Waits up to 10 seconds for the tunnel to go live)
         for _ in range(10):
