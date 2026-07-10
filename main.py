@@ -35,6 +35,9 @@ def get_local_ip():
     except:
         return "127.0.0.1"
 
+# =====================================================================
+# FRONTEND UI (Fully Expanded for Easy Editing)
+# =====================================================================
 HTML_UI = """
 <!DOCTYPE html>
 <html lang="en">
@@ -44,37 +47,108 @@ HTML_UI = """
     <title>OP INJOY VIP BOT</title>
     <style>
         :root {
-            --bg-main: #0B0F19; --bg-panel: #111827; --bg-input: #1F2937;
-            --border-color: #374151; --text-main: #F3F4F6; --text-muted: #9CA3AF;
-            --brand-primary: #3B82F6; --success: #10B981; --danger: #EF4444;
+            --bg-main: #0B0F19; 
+            --bg-panel: #111827; 
+            --bg-input: #1F2937;
+            --border-color: #374151; 
+            --text-main: #F3F4F6; 
+            --text-muted: #9CA3AF;
+            --brand-primary: #3B82F6; 
+            --success: #10B981; 
+            --danger: #EF4444;
         }
-        body { margin: 0; padding: 0; background-color: var(--bg-main); color: var(--text-main); font-family: -apple-system, sans-serif; }
-        #panel-container { width: 94%; max-width: 650px; margin: 40px auto; padding-bottom: 40px; box-sizing: border-box; }
-        .panel { background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 12px; padding: 24px; position: relative; overflow: hidden; }
-        .panel::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, var(--brand-primary), #8B5CF6); }
-        .header { text-align: center; margin-bottom: 24px; padding-bottom: 20px; border-bottom: 1px solid var(--border-color); }
+        
+        body { 
+            margin: 0; padding: 0; 
+            background-color: var(--bg-main); 
+            color: var(--text-main); 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+        }
+        
+        #panel-container { 
+            width: 94%; max-width: 650px; 
+            margin: 40px auto; padding-bottom: 40px; 
+            box-sizing: border-box; 
+        }
+        
+        .panel { 
+            background: var(--bg-panel); 
+            border: 1px solid var(--border-color); 
+            border-radius: 12px; padding: 24px; 
+            position: relative; overflow: hidden; 
+        }
+        
+        .panel::before { 
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; 
+            background: linear-gradient(90deg, var(--brand-primary), #8B5CF6); 
+        }
+        
+        .header { 
+            text-align: center; margin-bottom: 24px; padding-bottom: 20px; 
+            border-bottom: 1px solid var(--border-color); 
+        }
+        
         .header h2 { margin: 0; color: #fff; font-weight: 700; font-size: 24px; }
         .header p { margin: 5px 0 0 0; color: var(--text-muted); font-size: 13px; font-weight: 500; text-transform: uppercase; }
-        .stats { display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; background: var(--bg-main); padding: 14px; border-radius: 8px; margin-bottom: 24px; font-weight: 600; font-size: 13px; color: var(--text-muted); border: 1px solid var(--border-color); }
+        
+        .stats { 
+            display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; 
+            background: var(--bg-main); padding: 14px; border-radius: 8px; margin-bottom: 24px; 
+            font-weight: 600; font-size: 13px; color: var(--text-muted); border: 1px solid var(--border-color); 
+        }
+        
         .stats span { color: #fff; font-weight: 700; }
-        .server-box { background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 8px; padding: 20px; margin-bottom: 16px; width: 100%; box-sizing: border-box; transition: 0.2s; }
+        
+        .server-box { 
+            background: var(--bg-main); border: 1px solid var(--border-color); 
+            border-radius: 8px; padding: 20px; margin-bottom: 16px; 
+            width: 100%; box-sizing: border-box; transition: 0.2s; 
+        }
+        
         .server-box:hover { border-color: #4B5563; }
-        .server-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; font-weight: 700; font-size: 14px; color: #fff; }
+        
+        .server-header { 
+            display: flex; justify-content: space-between; align-items: center; 
+            margin-bottom: 16px; font-weight: 700; font-size: 14px; color: #fff; 
+        }
+        
         .running { color: var(--success); background: rgba(16, 185, 129, 0.1); padding: 4px 8px; border-radius: 4px; font-size: 12px; }
         .stopped { color: var(--danger); background: rgba(239, 68, 68, 0.1); padding: 4px 8px; border-radius: 4px; font-size: 12px; }
+        
         .input-row { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 12px; width: 100%; }
-        input, select { flex: 1 1 40%; background: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-main); padding: 12px 14px; border-radius: 6px; box-sizing: border-box; font-family: inherit; font-size: 14px; outline: none; transition: 0.2s; }
+        
+        input, select { 
+            flex: 1 1 40%; background: var(--bg-input); border: 1px solid var(--border-color); 
+            color: var(--text-main); padding: 12px 14px; border-radius: 6px; 
+            box-sizing: border-box; font-family: inherit; font-size: 14px; outline: none; transition: 0.2s; 
+        }
+        
         input:focus, select:focus { border-color: var(--brand-primary); box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2); }
         input::placeholder { color: #6B7280; }
+        
         .full-width { width: 100%; flex: 1 1 100%; margin-bottom: 12px; }
+        
         .btn-group { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 20px; width: 100%; }
-        button { flex: 1 1 45%; padding: 12px; font-weight: 600; cursor: pointer; border: none; border-radius: 6px; font-size: 13px; transition: 0.2s; text-transform: uppercase; }
+        
+        button { 
+            flex: 1 1 45%; padding: 12px; font-weight: 600; cursor: pointer; 
+            border: none; border-radius: 6px; font-size: 13px; transition: 0.2s; text-transform: uppercase; 
+        }
+        
         .btn-start { background: var(--success); color: #fff; }
         .btn-start:hover { background: #059669; }
+        
         .btn-stop { background: transparent; color: var(--danger); border: 1px solid var(--danger); }
         .btn-stop:hover { background: var(--danger); color: #fff; }
+        
         .slot-controls { display: flex; justify-content: center; gap: 24px; margin-top: 32px; }
-        .circle-btn { width: 48px; height: 48px; border-radius: 50%; border: none; background: var(--brand-primary); color: #fff; font-size: 24px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; }
+        
+        .circle-btn { 
+            width: 48px; height: 48px; border-radius: 50%; border: none; 
+            background: var(--brand-primary); color: #fff; font-size: 24px; 
+            display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; 
+        }
+        
         .circle-btn:hover { background: #2563EB; transform: translateY(-2px); }
         .circle-btn.minus { background: var(--bg-input); color: var(--text-muted); border: 1px solid var(--border-color); }
         .circle-btn.minus:hover { background: var(--danger); color: #fff; border-color: var(--danger); }
@@ -163,7 +237,9 @@ HTML_UI = """
         
         const focused = document.activeElement;
         const container = document.getElementById('servers');
-        if (!container.contains(focused)) container.innerHTML = html;
+        if (!container.contains(focused)) {
+            container.innerHTML = html;
+        }
         
         document.getElementById('cpu').innerText = `CPU: ${data.cpu}`;
         document.getElementById('ram').innerText = `RAM: ${data.ram}`;
@@ -171,16 +247,27 @@ HTML_UI = """
         document.getElementById('active').innerText = `RUNNING: ${data.active}`;
 
         const minusBtn = document.getElementById('btn-remove');
-        minusBtn.style.display = keys.length > 1 ? 'flex' : 'none';
+        if (keys.length > 1) {
+            minusBtn.style.display = 'flex';
+        } else {
+            minusBtn.style.display = 'none';
+        }
     }
 
-    function fetchStats() { fetch('/api/stats').then(res => res.json()).then(data => renderServers(data)).catch(err => console.log(err)); }
+    function fetchStats() { 
+        fetch('/api/stats')
+            .then(res => res.json())
+            .then(data => renderServers(data))
+            .catch(err => console.log(err)); 
+    }
 
     function sendAction(id, action) {
         fetch('/api/action', {
-            method: 'POST', headers: {'Content-Type': 'application/json'},
+            method: 'POST', 
+            headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({
-                id: id, action: action, 
+                id: id, 
+                action: action, 
                 target: document.getElementById(`target_${id}`).value, 
                 bots: document.getElementById(`bots_${id}`).value, 
                 edition: document.getElementById(`edition_${id}`).value, 
@@ -195,7 +282,11 @@ HTML_UI = """
     }
 
     function adjustSlots(action) {
-        fetch('/api/slots', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({action: action}) }).then(() => fetchStats());
+        fetch('/api/slots', { 
+            method: 'POST', 
+            headers: {'Content-Type': 'application/json'}, 
+            body: JSON.stringify({action: action}) 
+        }).then(() => fetchStats());
     }
 
     setInterval(fetchStats, 2000);
@@ -205,18 +296,34 @@ HTML_UI = """
 </html>
 """
 
+# =====================================================================
+# API ROUTES
+# =====================================================================
+
 @app.route('/')
-def index(): return render_template_string(HTML_UI)
+def index(): 
+    return render_template_string(HTML_UI)
 
 @app.route('/api/stats')
 def stats():
-    try: cpu_usage = f"{psutil.cpu_percent(interval=None)}%"
-    except: cpu_usage = "Locked"
-    try: ram_usage = f"{psutil.virtual_memory().percent}%"
-    except: ram_usage = "N/A"
+    try: 
+        cpu_usage = f"{psutil.cpu_percent(interval=None)}%"
+    except Exception: 
+        cpu_usage = "Locked"
+        
+    try: 
+        ram_usage = f"{psutil.virtual_memory().percent}%"
+    except Exception: 
+        ram_usage = "N/A"
     
     active_count = sum(1 for s in bot_servers.values() if s['status'] == 'RUNNING')
-    response = {"cpu": cpu_usage, "ram": ram_usage, "active": active_count, "total_slots": len(bot_servers)}
+    
+    response = {
+        "cpu": cpu_usage, 
+        "ram": ram_usage, 
+        "active": active_count, 
+        "total_slots": len(bot_servers)
+    }
     response.update(bot_servers)
     return jsonify(response)
 
@@ -224,25 +331,32 @@ def stats():
 def adjust_slots():
     action = request.json.get('action')
     global bot_servers
+    
     if action == 'add':
         bot_servers[str(len(bot_servers) + 1)] = {"status": "STOPPED", "target": "", "bots": "10", "edition": "3", "pid": None}
     elif action == 'remove' and len(bot_servers) > 1:
         last_id = str(len(bot_servers))
         if bot_servers[last_id].get('pid'):
-            try: os.kill(bot_servers[last_id]['pid'], 9)
-            except: pass
+            try: 
+                os.kill(bot_servers[last_id]['pid'], 9)
+            except Exception: 
+                pass
         del bot_servers[last_id]
+        
     return jsonify({"success": True})
 
 @app.route('/api/action', methods=['POST'])
 def action():
     data = request.json
     s_id = str(data.get('id'))
+    
     if s_id in bot_servers:
         if data.get('action') == 'start':
             if bot_servers[s_id].get('pid'):
-                try: os.kill(bot_servers[s_id]['pid'], 9)
-                except: pass
+                try: 
+                    os.kill(bot_servers[s_id]['pid'], 9)
+                except Exception: 
+                    pass
             
             bot_servers[s_id]['status'] = 'RUNNING'
             bot_servers[s_id]['target'] = data.get('target', '')
@@ -261,23 +375,43 @@ def action():
                 'FOLLOW_TARGET': str(data.get('follow', ''))
             })
 
-            try: bot_servers[s_id]['pid'] = subprocess.Popen(['node', 'index.js'], env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).pid
-            except Exception as e: print(f"[-] Error: {e}")
+            try: 
+                bot_servers[s_id]['pid'] = subprocess.Popen(['node', 'index.js'], env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).pid
+            except Exception as e: 
+                print(f"[-] Error: {e}")
             
         elif data.get('action') == 'stop':
             bot_servers[s_id]['status'] = 'STOPPED'
             if bot_servers[s_id].get('pid'):
-                try: os.kill(bot_servers[s_id]['pid'], 9)
-                except: pass
+                try: 
+                    os.kill(bot_servers[s_id]['pid'], 9)
+                except Exception: 
+                    pass
                 bot_servers[s_id]['pid'] = None
+                
     return jsonify({"success": True})
 
+# =====================================================================
+# START ENGINE
+# =====================================================================
 if __name__ == '__main__':
     os.system('clear' if os.name == 'posix' else 'cls')
+    network_ip = get_local_ip()
+    
     print("\033[94m\033[1m========================================\033[0m")
-    print("\033[97m\033[1m    OP INJOY VIP BOT PANEL - V4   \033[0m")
+    print("\033[97m\033[1m      OP INJOY VIP BOT PANEL      \033[0m")
     print("\033[94m\033[1m========================================\033[0m")
-    print(f"\033[92m[*] LAN ACCESS: http://{get_local_ip()}:9000\033[0m\n")
+    print("\033[92m[*] LOCAL (Non-Root):  http://localhost:9000\033[0m")
+    print("\033[92m[*] ROOT ACCESS:       http://injoy:9000\033[0m")
+    print(f"\033[92m[*] LAN / WiFi ACCESS: http://{network_ip}:9000\033[0m\n")
+    
+    try:
+        psutil.cpu_percent()
+    except Exception:
+        pass
+        
     import logging
-    logging.getLogger('werkzeug').setLevel(logging.ERROR)
+    log = logging.getLogger('werkzeug')
+    log.setLevel(logging.ERROR)
+    
     app.run(host='0.0.0.0', port=9000, threaded=True)
