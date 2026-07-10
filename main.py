@@ -48,9 +48,9 @@ def start_ngrok_background():
         os.system("pkill -9 ngrok > /dev/null 2>&1")
         time.sleep(1)
         
-        # Started with strict --domain syntax and output logged to ngrok.log
+        # Using the correct --url flag as requested by ngrok's log
         log_file = open("ngrok.log", "w")
-        subprocess.Popen([ngrok_cmd, 'http', f'--domain={STATIC_URL}', '9000'], stdout=log_file, stderr=subprocess.STDOUT)
+        subprocess.Popen([ngrok_cmd, 'http', f'--url={STATIC_URL}', '9000'], stdout=log_file, stderr=subprocess.STDOUT)
         
         time.sleep(2) 
         print(f"\033[92m\033[1m[*] GLOBAL ACCESS (Ngrok): https://{STATIC_URL}\033[0m")
