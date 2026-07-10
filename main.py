@@ -1,16 +1,14 @@
 import os
 import sys
 import time
-import json
 import socket
 import threading
 import psutil
 import subprocess
-import urllib.request
 from flask import Flask, render_template_string, jsonify, request
 
 # =====================================================================
-# OP INJOY VIP BOT - V4 ULTIMATE EDITION (NGROK SMART BOOT)
+# OP INJOY VIP BOT - V4 ULTIMATE EDITION (INSTANT NGROK BOOT)
 # =====================================================================
 
 app = Flask(__name__)
@@ -20,6 +18,7 @@ bot_servers = {
 }
 
 NGROK_TOKEN = "3GJ5D4g5OuBxCgqu0LbGo40mjn3_49YVQFhdVTy36jHdmugN8"
+STATIC_URL = "pulsate-spoiling-entree.ngrok-free.dev"
 
 def auto_restart_sequence():
     time.sleep(7200)
@@ -41,33 +40,18 @@ def get_local_ip():
 
 def start_ngrok_background():
     try:
-        # Check absolute path for Termux
         ngrok_cmd = "/data/data/com.termux/files/usr/bin/ngrok"
         if not os.path.exists(ngrok_cmd):
-            ngrok_cmd = "ngrok" # Fallback for PC/Linux
+            ngrok_cmd = "ngrok" 
             
-        # Authenticate and kill any old sessions
         os.system(f"{ngrok_cmd} config add-authtoken {NGROK_TOKEN} > /dev/null 2>&1")
         os.system("pkill -9 ngrok > /dev/null 2>&1")
         
-        # Start tunnel silently with the CORRECT --domain flag
-        subprocess.Popen([ngrok_cmd, 'http', '--domain=pulsate-spoiling-entree.ngrok-free.dev', '9000'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        # Force start with the exact v3 syntax and your static URL
+        subprocess.Popen([ngrok_cmd, 'http', f'--url={STATIC_URL}', '9000'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         
-        # Smart Wait Loop (Waits up to 10 seconds for the tunnel to go live)
-        for _ in range(10):
-            time.sleep(1)
-            try:
-                req = urllib.request.Request("http://127.0.0.1:4040/api/tunnels")
-                with urllib.request.urlopen(req, timeout=2) as response:
-                    data = json.loads(response.read().decode())
-                    if data.get('tunnels'):
-                        public_url = data['tunnels'][0]['public_url']
-                        print(f"\033[92m\033[1m[*] GLOBAL ACCESS (Ngrok): {public_url}\033[0m\n")
-                        return
-            except Exception:
-                continue
-                
-        print("\033[93m[*] Ngrok API timeout. Connection is too slow right now.\033[0m\n")
+        time.sleep(1) # Give it 1 second to hook the port
+        print(f"\033[92m\033[1m[*] GLOBAL ACCESS (Ngrok): https://{STATIC_URL}\033[0m\n")
     except Exception as e:
         print(f"\033[93m[*] Ngrok failed to start: {e}\033[0m\n")
 
@@ -343,7 +327,7 @@ def action():
             try: 
                 bot_servers[s_id]['pid'] = subprocess.Popen(['node', 'index.js'], env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).pid
             except Exception as e: 
-                print(f"[-] Error: {e}")
+                pass
             
         elif data.get('action') == 'stop':
             bot_servers[s_id]['status'] = 'STOPPED'
@@ -371,7 +355,6 @@ if __name__ == '__main__':
     print(f"\033[92m[*] LAN / WiFi ACCESS: http://{network_ip}:9000\033[0m")
     print("\033[93m[*] Establishing Ngrok Global Link...\033[0m")
     
-    # Start ngrok in background and print public link
     threading.Thread(target=start_ngrok_background, daemon=True).start()
     
     try:
